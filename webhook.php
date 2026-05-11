@@ -143,56 +143,26 @@ if (preg_match('/(\d{2}\.\d{2}\.\d{2})\s+(\d{2}:\d{2})/i', $body, $dm)) {
 //   ZACHISLENIE         → KIRIM
 //   Perevod na kartu (P2P yo'q, SCHET TO yo'q) → KIRIM
 
-$is_p2p      = (bool)preg_match('/HUMO\s+UZCARD\s+P2P|P2P\s+UZCARD|\bP2P\b/i', $body);
-$is_schet_to = (bool)preg_match('/SCHET\s+TO\s+UZCARD/i', $body);
-$is_platezh  = (bool)preg_match('/Platezh\s*:/i', $body);
-$is_spisanie = (bool)preg_match('/SPISANIE/i', $body);
-$is_zach     = (bool)preg_match('/ZACHISLENIE|zachisleno|postuplenie/i', $body);
-$is_perevod  = (bool)preg_match('/Perevod\s+na\s+kartu\s*:/i', $body);
+// ============================================
+// TIP ANIQLASH — faqat ZACHISLENIE/zachisleno/postuplenie = KIRIM
+// Qolgan hammasi (SPISANIE, Platezh, Perevod, P2P va h.k.) = CHIQIM
+// ============================================
+$is_zach = (bool)preg_match('/ZACHISLENIE|zachisleno|postuplenie/i', $body);
 
-if ($is_p2p) {
-    $type = 'credit';  // P2P kirim
-} elseif ($is_schet_to) {
-    $type = 'debit';   // OpenBank → UzCard — CHIQIM
-} elseif ($is_platezh || $is_spisanie) {
-    $type = 'debit';   // To'lov — CHIQIM
-} elseif ($is_zach) {
+if ($is_zach) {
     $type = 'credit';  // Hisobga tushirildi — KIRIM
-} elseif ($is_perevod) {
-    $type = 'credit';  // Boshqa perevod — KIRIM
 } else {
-    $type = 'debit';   // Noma'lum — xavfsiz tomon
+    $type = 'debit';   // Qolgan hamma holat — CHIQIM
 }
 
-// ============================================
-// MERCHANT — KIMDAN / QAYERGA
-// ============================================
-// UzCard emailida haqiqiy yuboruvchi/qabul qiluvchi nomi yo'q.
-// Faqat texnik so'zlar bor: OPENBANK, HUMO, UZCARD, P2P, SCHET TO va h.k.
-// Shuning uchun har bir holat uchun mazmunli tavsif yozamiz.
-//
-// REAL FORMATLAR:
-//   "Perevod na kartu: OPENBANK HUMO UZCARD P2P, UZ"   → HUMO kartadan P2P kirim
-//   "Platezh: OPENBANK UZCARD POPOLN SCHETA, UZ"        → UzCard hisobni to'ldirish (chiqim)
-//   "Perevod na kartu: OPENBANK SCHET TO UZCARD, UZ"    → UzCard → OpenBank o'tkazma (chiqim)
-//   "ZACHISLENIE ..."                                    → Hisobga o'tkazildi (kirim)
-
 if ($type === 'credit') {
-    $merchant = "Kirim";
+    $merchant   = "Kirim";
+    $type_text  = "🟢 Kirim (Tushum)";
+    $sign       = "➕";
 } else {
-    $merchant = "Chiqim";
-}
-
-// Tip labellari
-if ($type === 'credit') {
-    if ($is_p2p)      { $type_text = "🟢 Kirim (P2P o'tkazma)";         $sign = "➕"; }
-    elseif ($is_zach) { $type_text = "🟢 Kirim (Hisobga tushirildi)";   $sign = "➕"; }
-    else              { $type_text = "🟢 Kirim (O'tkazma)";             $sign = "➕"; }
-} else {
-    if ($is_schet_to)    { $type_text = "🔴 Chiqim (OpenBank → UzCard)"; $sign = "➖"; }
-    elseif ($is_platezh) { $type_text = "🔴 Chiqim (To'lov)";            $sign = "➖"; }
-    elseif ($is_spisanie){ $type_text = "🔴 Chiqim (Hisobdan chiqarish)";}
-    else                 { $type_text = "🔴 Chiqim";                     $sign = "➖"; }
+    $merchant   = "Chiqim";
+    $type_text  = "🔴 Chiqim (Yechim)";
+    $sign       = "➖";
 }
 
 // ============================================
