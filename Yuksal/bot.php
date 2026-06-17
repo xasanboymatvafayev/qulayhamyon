@@ -1,6 +1,6 @@
 <?php
 
-$sub_domen = "qulayhamyon.up.railway.app";
+$sub_domen = "qulayhamyonuz.up.railway.app";
 require (__DIR__ . "/../config.php");
 
 $administrator = getenv('ADMIN_ID') ?: "6365371142";
@@ -546,7 +546,7 @@ if(!empty($data) && mb_stripos($data,"cancel_order=")!==false){
 // API HUJJATLAR
 // ============================================================
 if(!empty($text) && $text=="📖 API Hujjatlar"){
-    bot('sendMessage',['chat_id'=>$cid,'text'=>"<b>📖 API Hujjatlar:</b>\nhttps://qulayhamyon.up.railway.app/docs",'disable_web_page_preview'=>true,'parse_mode'=>'html','reply_markup'=>json_encode(['inline_keyboard'=>[[['text'=>"📁 API Docs",'url'=>"https://qulayhamyon.up.railway.app/docs"]]]])]);
+    bot('sendMessage',['chat_id'=>$cid,'text'=>"<b>📖 API Hujjatlar:</b>\nhttps://qulayhamyonuz.up.railway.app/docs",'disable_web_page_preview'=>true,'parse_mode'=>'html','reply_markup'=>json_encode(['inline_keyboard'=>[[['text'=>"📁 API Docs",'url'=>"https://qulayhamyonuz.up.railway.app/docs"]]]])]);
     exit;
 }
 
@@ -1043,7 +1043,7 @@ if($step=="add_kassa" && !empty($text)){
     if(mysqli_num_rows(mysqli_query($connect,"SELECT * FROM shops WHERE shop_name='".base64_encode($text)."'"))>0){
         bot('sendMessage',['chat_id'=>$cid,'text'=>"⚠️ Bu nom bilan kassa mavjud!",'parse_mode'=>'html']); exit;
     }
-    bot('sendmessage',['chat_id'=>$cid,'text'=>"✅ Nom qabul qilindi!\n\nKassa havolasini kiriting:\n<i>Masalan: @username yoki qulayhamyon.up.railway.app</i>",'parse_mode'=>'html','reply_markup'=>$back]);
+    bot('sendmessage',['chat_id'=>$cid,'text'=>"✅ Nom qabul qilindi!\n\nKassa havolasini kiriting:\n<i>Masalan: @username yoki qulayhamyonuz.up.railway.app</i>",'parse_mode'=>'html','reply_markup'=>$back]);
     mysqli_query($connect,"UPDATE users SET step='add_kassa_address-".base64_encode($text)."' WHERE user_id='$cid_esc'");
     exit;
 }
