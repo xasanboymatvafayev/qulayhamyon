@@ -21,7 +21,7 @@ $time_limit = date('Y-m-d H:i:s', strtotime('-5 minutes'));
 
 // Avval shu order bilan bog'langan to'lov bormi tekshir
 if ($order) {
-    $used = mysqli_fetch_assoc(mysqli_query($connect,
+    $used = safe_fetch_assoc(mysqli_query($connect,
         "SELECT * FROM payments WHERE used_order = '$order' AND status = 'used'"
     ));
     if ($used) {
@@ -47,8 +47,8 @@ $result = mysqli_query($connect,
      LIMIT 1"
 );
 
-if (mysqli_num_rows($result) > 0) {
-    $row = mysqli_fetch_assoc($result);
+if (safe_num_rows($result) > 0) {
+    $row = safe_fetch_assoc($result);
     $id  = $row['id'];
 
     // Ishlatilgan deb belgilash
