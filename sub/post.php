@@ -45,7 +45,7 @@ if ($method === 'create') {
     $shop_id_esc  = mysqli_real_escape_string($connect, $shop_id);
     $shop_key_esc = mysqli_real_escape_string($connect, $shop_key);
 
-    $rew = mysqli_fetch_assoc(mysqli_query($connect,
+    $rew = safe_fetch_assoc(mysqli_query($connect,
         "SELECT * FROM shops WHERE shop_id='$shop_id_esc' AND shop_key='$shop_key_esc'"
     ));
 
@@ -74,7 +74,7 @@ if ($method === 'create') {
     );
 
     // === TO'G'RILANGAN: Faqat aktiv (vaqt o'tmagan) pending orderni tekshirish ===
-    $exist = mysqli_fetch_assoc(mysqli_query($connect,
+    $exist = safe_fetch_assoc(mysqli_query($connect,
         "SELECT * FROM checkout 
          WHERE amount='$amount' AND shop_id='$shop_id_esc' AND status='pending'
          AND date > '$expire_time'"
@@ -132,7 +132,7 @@ if ($method === 'check') {
     }
 
     $order_esc = mysqli_real_escape_string($connect, $order);
-    $check = mysqli_fetch_assoc(mysqli_query($connect,
+    $check = safe_fetch_assoc(mysqli_query($connect,
         "SELECT * FROM checkout WHERE `order`='$order_esc'"
     ));
 
@@ -165,7 +165,7 @@ if ($method === 'cancel') {
     }
 
     $order_esc = mysqli_real_escape_string($connect, $order);
-    $check = mysqli_fetch_assoc(mysqli_query($connect,
+    $check = safe_fetch_assoc(mysqli_query($connect,
         "SELECT * FROM checkout WHERE `order`='$order_esc'"
     ));
 
@@ -190,7 +190,7 @@ if ($shop_id && $shop_key) {
     $shop_id_esc  = mysqli_real_escape_string($connect, $shop_id);
     $shop_key_esc = mysqli_real_escape_string($connect, $shop_key);
 
-    $rew = mysqli_fetch_assoc(mysqli_query($connect,
+    $rew = safe_fetch_assoc(mysqli_query($connect,
         "SELECT * FROM shops WHERE shop_id='$shop_id_esc' AND shop_key='$shop_key_esc'"
     ));
 
