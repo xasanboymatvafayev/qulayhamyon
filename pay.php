@@ -11,14 +11,14 @@ if (!$order || !$shop_id) {
 $order_esc   = mysqli_real_escape_string($connect, $order);
 $shop_id_esc = mysqli_real_escape_string($connect, $shop_id);
 
-$checkout = mysqli_fetch_assoc(mysqli_query($connect,
+$checkout = safe_fetch_assoc(mysqli_query($connect,
     "SELECT * FROM checkout WHERE `order`='$order_esc' AND shop_id='$shop_id_esc'"
 ));
 if (!$checkout) {
     die('<div style="text-align:center;padding:40px;color:#ef4444;font-size:18px;">Tolov topilmadi!</div>');
 }
 
-$shop = mysqli_fetch_assoc(mysqli_query($connect,
+$shop = safe_fetch_assoc(mysqli_query($connect,
     "SELECT * FROM shops WHERE shop_id='$shop_id_esc'"
 ));
 
