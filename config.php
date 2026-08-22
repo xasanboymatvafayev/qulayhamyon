@@ -29,6 +29,29 @@ if ($connect) {
         PRIMARY KEY (id),
         UNIQUE KEY uniq_key (`key`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    // Kassa sozlamalari (karta, bank, egasi, email) 'shops' jadvaliga
+    // saqlanadi, lekin bu ustunlar boshlang'ich sxemada yo'q edi — shuning
+    // uchun "Karta kiritish" va "Email" saqlanmayotgan edi (so'rov jimgina
+    // muvaffaqiyatsiz bo'lardi). Yetishmasa avtomatik qo'shamiz.
+    $needed_shop_cols = [
+        'card_number' => "VARCHAR(30) DEFAULT NULL",
+        'card_bank'   => "VARCHAR(30) DEFAULT NULL",
+        'card_owner'  => "VARCHAR(100) DEFAULT NULL",
+        'email'       => "VARCHAR(150) DEFAULT NULL",
+    ];
+    $existing_cols = [];
+    $col_res = mysqli_query($connect, "SHOW COLUMNS FROM shops");
+    if ($col_res) {
+        while ($c = mysqli_fetch_assoc($col_res)) {
+            $existing_cols[] = $c['Field'];
+        }
+        foreach ($needed_shop_cols as $col => $def) {
+            if (!in_array($col, $existing_cols)) {
+                mysqli_query($connect, "ALTER TABLE shops ADD COLUMN `$col` $def");
+            }
+        }
+    }
 }
 
 // ============================================================
