@@ -107,7 +107,7 @@ function joinchat($id){
         "SELECT joined_ok, joined_check FROM users WHERE user_id='$id_esc' LIMIT 1"
     );
     if($cache_res){
-        $cache_row = mysqli_fetch_assoc($cache_res);
+        $cache_row = safe_fetch_assoc($cache_res);
         if($cache_row
            && isset($cache_row['joined_ok'])
            && $cache_row['joined_ok'] == 1
@@ -203,7 +203,7 @@ function getStats($connect, $shop_id){
     $prev_e   = date('Y-m-t',  strtotime('-1 month'));
     $sid      = mysqli_real_escape_string($connect, $shop_id);
 
-    $row = mysqli_fetch_assoc(mysqli_query($connect, "
+    $row = safe_fetch_assoc(mysqli_query($connect, "
         SELECT
           COALESCE(SUM(CASE WHEN DATE(date)='$today'     THEN amount ELSE 0 END),0) as bugun,
           COALESCE(SUM(CASE WHEN DATE(date)='$yesterday' THEN amount ELSE 0 END),0) as kecha,
@@ -256,7 +256,7 @@ if(!$cid) exit;
 $cid_esc = mysqli_real_escape_string($connect, $cid);
 
 $res      = mysqli_query($connect,"SELECT id,balance,deposit,step FROM users WHERE user_id='$cid_esc' LIMIT 1");
-$user_row = mysqli_fetch_assoc($res);
+$user_row = safe_fetch_assoc($res);
 if($user_row){
     $uid     = $user_row['id'];
     $balance = $user_row['balance'];
@@ -302,7 +302,7 @@ if(!empty($data) && $data=="result"){
 if(!empty($text) && ($text=="/start" || $text=="⏪ Ortga")){
     static $has_channels = null;
     if($has_channels === null)
-        $has_channels = mysqli_num_rows(mysqli_query($connect,"SELECT id FROM channels LIMIT 1")) > 0;
+        $has_channels = safe_num_rows(mysqli_query($connect,"SELECT id FROM channels LIMIT 1")) > 0;
     if(!$has_channels || joinchat($cid)==true){
         mysqli_query($connect,"UPDATE users SET step='null' WHERE user_id='$cid_esc'");
         bot('sendMessage',['chat_id'=>$cid,'text'=>"👋🏻 <b>Assalomu alaykum $name!</b>\n\n@$bot botga xush kelibsiz.",'parse_mode'=>'html','reply_markup'=>$m]);
@@ -326,7 +326,7 @@ if(!empty($text) && $text=="💵 Hisobim"){
     exit;
 }
 if(!empty($data) && $data=="Hisobim"){
-    $fresh = mysqli_fetch_assoc(mysqli_query($connect,"SELECT balance,deposit,id FROM users WHERE user_id='$cid_esc'"));
+    $fresh = safe_fetch_assoc(mysqli_query($connect,"SELECT balance,deposit,id FROM users WHERE user_id='$cid_esc'"));
     $balance = $fresh['balance']; $payment = $fresh['deposit']; $uid = $fresh['id'];
     bot('editMessageText',['chat_id'=>$cid,'message_id'=>$mid,'text'=>"👔 <b>Sizning hisobingiz!</b>\n\n• ID: <code>$uid</code>\n• Balans: <b>$balance</b> so'm\n• Kiritgan: <b>$payment</b> so'm",'parse_mode'=>'html','reply_markup'=>json_encode(['inline_keyboard'=>[[['text'=>"🔄 Yangilash",'callback_data'=>"Hisobim"]],[['text'=>"📋 To'ldirish tarixi",'callback_data'=>"user_history=1"]]]])]);
     exit;
@@ -371,7 +371,7 @@ if($step=="uzcard_auto" && !empty($text)){
         "SELECT user_id, `order`, amount FROM checkout
          WHERE shop_id='127000' AND status='pending' AND date <= '$expire_time'"
     );
-    while ($exp = mysqli_fetch_assoc($expired_orders)) {
+    while ($exp = safe_fetch_assoc($expired_orders)) {
         $exp_amt = number_format((int)$exp['amount'], 0, '.', ' ');
         bot('sendMessage', [
             'chat_id'      => $exp['user_id'],
@@ -392,12 +392,12 @@ if($step=="uzcard_auto" && !empty($text)){
     // ============================================================
 
     // Faol (muddati o'tmagan) order bormi?
-    $active_order = mysqli_fetch_assoc(mysqli_query($connect,
+    $active_order = safe_fetch_assoc(mysqli_query($connect,
         "SELECT * FROM checkout WHERE user_id='$cid_esc' AND shop_id='127000' AND status='pending' AND date > '$expire_time'"
     ));
     if($active_order){
         $pay_url   = "https://$sub_domen/pay?order=".$active_order['order']."&shop_id=127000";
-        $main_shop = mysqli_fetch_assoc(mysqli_query($connect,"SELECT * FROM shops WHERE shop_id='127000'"));
+        $main_shop = safe_fetch_assoc(mysqli_query($connect,"SELECT * FROM shops WHERE shop_id='127000'"));
         $card_raw  = ($main_shop && !empty($main_shop['card_number'])) ? preg_replace('/\s+/','',$main_shop['card_number']) : '5614683582279246';
         $act_amount = $active_order['amount'];
         $act_fmt    = number_format((int)$act_amount, 0, '.', ' ');
@@ -418,7 +418,7 @@ if($step=="uzcard_auto" && !empty($text)){
 
     // Yangi order yaratish
     $amount    = $amount_original;
-    $main_shop = mysqli_fetch_assoc(mysqli_query($connect,"SELECT * FROM shops WHERE shop_id='127000'"));
+    $main_shop = safe_fetch_assoc(mysqli_query($connect,"SELECT * FROM shops WHERE shop_id='127000'"));
     $card_raw  = ($main_shop && !empty($main_shop['card_number'])) ? preg_replace('/\s+/','',$main_shop['card_number']) : '5614683582279246';
     $card_show = chunk_split($card_raw, 4, ' ');
 
@@ -449,14 +449,14 @@ if(!empty($data) && mb_stripos($data,"chk=")!==false){
     $order_c  = $parts[2];
     $order_esc = mysqli_real_escape_string($connect,$order_c);
 
-    $checkout_row = mysqli_fetch_assoc(mysqli_query($connect,
+    $checkout_row = safe_fetch_assoc(mysqli_query($connect,
         "SELECT * FROM checkout WHERE `order`='$order_esc' LIMIT 1"
     ));
 
     $paid = false;
 
     if($checkout_row && $checkout_row['status']==='paid'){
-        $already = mysqli_fetch_assoc(mysqli_query($connect,
+        $already = safe_fetch_assoc(mysqli_query($connect,
             "SELECT * FROM checkout WHERE `order`='$order_esc' AND user_id='$cid_esc' AND paid_to_user='1' LIMIT 1"
         ));
         if(!$already){
@@ -481,7 +481,7 @@ if(!empty($data) && mb_stripos($data,"chk=")!==false){
         }
 
         $expire_time6 = date('Y-m-d H:i:s', strtotime('-6 minutes'));
-        $email_pay = mysqli_fetch_assoc(mysqli_query($connect,
+        $email_pay = safe_fetch_assoc(mysqli_query($connect,
             "SELECT * FROM payments
              WHERE amount='$amount_c' AND status='pending'
              AND card_type='credit'
@@ -578,7 +578,7 @@ function show_kassalar($cid,$connect,$mid=null,$edit=false,$qid=null){
     $cid_e = mysqli_real_escape_string($connect,$cid);
     $result = mysqli_query($connect,"SELECT id,shop_name,status FROM `shops` WHERE `user_id`='$cid_e'");
     $i=0; $key=[]; $has_rows=false;
-    while($us=mysqli_fetch_assoc($result)){
+    while($us=safe_fetch_assoc($result)){
         $has_rows=true; $i++;
         $icon = ($us['status']=="waiting")?"🔄":(($us['status']=="confirm")?"✅":"⛔");
         $key[]=[["text"=>"$i. $icon ".base64_decode($us['shop_name']),"callback_data"=>"kassa_set=".$us['id']]];
@@ -603,7 +603,7 @@ if(!empty($data) && $data=="Kassalarim"){    show_kassalar($cid,$connect,$mid,tr
 // ============================================================
 if(!empty($data) && mb_stripos($data,"kassa_set=")!==false){
     $id  = explode("=",$data)[1];
-    $rew = mysqli_fetch_assoc(mysqli_query($connect,"SELECT * FROM shops WHERE id='$id'"));
+    $rew = safe_fetch_assoc(mysqli_query($connect,"SELECT * FROM shops WHERE id='$id'"));
     $nomi        = base64_decode($rew['shop_name']);
     $shop_id     = $rew['shop_id'];
     $shop_key    = $rew['shop_key'];
@@ -671,7 +671,7 @@ if(!empty($data) && mb_stripos($data,"kassa_sozlama=")!==false){
     $parts     = explode("=",$data);
     $shop_id_s = $parts[1];
     $set_id_s  = $parts[2];
-    $rew       = mysqli_fetch_assoc(mysqli_query($connect,"SELECT * FROM shops WHERE shop_id='$shop_id_s'"));
+    $rew       = safe_fetch_assoc(mysqli_query($connect,"SELECT * FROM shops WHERE shop_id='$shop_id_s'"));
     $card_num  = $rew['card_number'] ?? null;
     $card_bank = $rew['card_bank'] ?? null;
     $card_owner= $rew['card_owner'] ?? null;
@@ -714,7 +714,7 @@ if(!empty($data) && mb_stripos($data,"user_history=")!==false){
     $per_page = 8;
     $offset   = ($page-1)*$per_page;
 
-    $total_r    = mysqli_fetch_assoc(mysqli_query($connect,
+    $total_r    = safe_fetch_assoc(mysqli_query($connect,
         "SELECT COUNT(*) as c FROM checkout WHERE user_id='$cid_esc' AND shop_id='127000' AND status='paid'"
     ));
     $total      = (int)($total_r['c'] ?? 0);
@@ -729,13 +729,13 @@ if(!empty($data) && mb_stripos($data,"user_history=")!==false){
          ORDER BY c.date DESC LIMIT $per_page OFFSET $offset"
     );
 
-    $fresh    = mysqli_fetch_assoc(mysqli_query($connect,"SELECT balance,deposit FROM users WHERE user_id='$cid_esc'"));
+    $fresh    = safe_fetch_assoc(mysqli_query($connect,"SELECT balance,deposit FROM users WHERE user_id='$cid_esc'"));
     $bal_show = number_format((int)$fresh['balance'],0,'.',' ');
     $dep_show = number_format((int)$fresh['deposit'],0,'.',' ');
 
-    if($res && mysqli_num_rows($res)>0){
+    if($res && safe_num_rows($res)>0){
         $list = ""; $i = $offset+1;
-        while($row=mysqli_fetch_assoc($res)){
+        while($row=safe_fetch_assoc($res)){
             $amt      = number_format((int)$row['amount'],0,'.',' ');
             $dt       = substr($row['date'],0,16);
             $merchant = $row['merchant'] ?? '';
@@ -775,7 +775,7 @@ if(!empty($data) && mb_stripos($data,"kassa_history=")!==false){
     $offset     = ($page-1)*$per_page;
     $shop_id_h_esc = mysqli_real_escape_string($connect,$shop_id_h);
 
-    $total_r = mysqli_fetch_assoc(mysqli_query($connect,
+    $total_r = safe_fetch_assoc(mysqli_query($connect,
         "SELECT COUNT(*) as c FROM payments p
           LEFT JOIN checkout ch ON ch.`order` = p.used_order
           WHERE COALESCE(p.shop_id, ch.shop_id) = '$shop_id_h_esc'"
@@ -794,10 +794,10 @@ if(!empty($data) && mb_stripos($data,"kassa_history=")!==false){
          LIMIT $per_page OFFSET $offset"
     );
 
-    if($res && mysqli_num_rows($res)>0){
+    if($res && safe_num_rows($res)>0){
         $list = ""; $i = $offset+1;
         $kirim_fmt = '0'; $chiqim_fmt = '0'; $first = true;
-        while($row=mysqli_fetch_assoc($res)){
+        while($row=safe_fetch_assoc($res)){
             if($first){
                 $kirim_fmt  = number_format((int)($row['_kirim'] ?? 0),0,'.',' ');
                 $chiqim_fmt = number_format((int)($row['_chiqim'] ?? 0),0,'.',' ');
@@ -846,16 +846,16 @@ if(!empty($data) && mb_stripos($data,"kassa_payment=")!==false){
     $parts      = explode("=",$data);
     $shop_id_p  = $parts[1];
     $set_id_p   = $parts[2];
-    $rew        = mysqli_fetch_assoc(mysqli_query($connect,"SELECT * FROM users WHERE user_id='$cid_esc'"));
+    $rew        = safe_fetch_assoc(mysqli_query($connect,"SELECT * FROM users WHERE user_id='$cid_esc'"));
     $bal        = $rew['balance'];
-    $settings_r = mysqli_fetch_assoc(mysqli_query($connect,"SELECT value FROM settings WHERE `key`='month_price'"));
+    $settings_r = safe_fetch_assoc(mysqli_query($connect,"SELECT value FROM settings WHERE `key`='month_price'"));
     $month_price= (int)($settings_r['value'] ?? 20000);
     $req        = in_array($cid,$admin) ? 0 : $month_price;
 
     if($bal >= $req){
         $new_bal = $bal - $req;
         mysqli_query($connect,"UPDATE users SET balance=$new_bal WHERE user_id='$cid_esc'");
-        $shop_r   = mysqli_fetch_assoc(mysqli_query($connect,"SELECT over_day FROM shops WHERE id='$set_id_p'"));
+        $shop_r   = safe_fetch_assoc(mysqli_query($connect,"SELECT over_day FROM shops WHERE id='$set_id_p'"));
         $new_over = ($shop_r['over_day'] ?? 0) + 30;
         mysqli_query($connect,"UPDATE shops SET over_day=$new_over, month_status='Toʻlandi' WHERE id='$set_id_p'");
         bot('editMessageText',['chat_id'=>$cid,'message_id'=>$mid,
@@ -926,7 +926,7 @@ if(!empty($data) && mb_stripos($data,"card_bank=")!==false){
     $shop_id_c = $parts[2];
     $set_id_c  = $parts[3];
     $card      = $parts[4];
-    $user_action = mysqli_fetch_assoc(mysqli_query($connect,"SELECT action FROM users WHERE user_id='$cid_esc'"));
+    $user_action = safe_fetch_assoc(mysqli_query($connect,"SELECT action FROM users WHERE user_id='$cid_esc'"));
     $owner = !empty($user_action['action']) ? base64_decode($user_action['action']) : '';
     $owner_esc = mysqli_real_escape_string($connect,$owner);
     mysqli_query($connect,"UPDATE shops SET card_number='$card', card_bank='$bank', card_owner='$owner_esc' WHERE shop_id='$shop_id_c'");
@@ -980,7 +980,7 @@ if(!empty($text) && $text=="🔗 Kassa ulash" && in_array($cid,$admin)){
 if($step=="admin_connect_shop" && in_array($cid,$admin) && !empty($text)){
     if($text=="🗄️ Boshqaruv"){ mysqli_query($connect,"UPDATE users SET step='null' WHERE user_id='$cid_esc'"); exit; }
     $shop_id_inp = mysqli_real_escape_string($connect,trim($text));
-    $shop_r      = mysqli_fetch_assoc(mysqli_query($connect,"SELECT * FROM shops WHERE shop_id='$shop_id_inp'"));
+    $shop_r      = safe_fetch_assoc(mysqli_query($connect,"SELECT * FROM shops WHERE shop_id='$shop_id_inp'"));
     if(!$shop_r){
         bot('sendMessage',['chat_id'=>$cid,'text'=>"❌ Bu Shop ID topilmadi!",'reply_markup'=>$panel]);
         mysqli_query($connect,"UPDATE users SET step='null' WHERE user_id='$cid_esc'"); exit;
@@ -1007,7 +1007,7 @@ if(!empty($data) && $data=="panel_back" && in_array($cid,$admin)){
 }
 if(!empty($data) && mb_stripos($data,"activate_kassa=")!==false && in_array($cid,$admin)){
     $shop_id_ak = explode("=",$data)[1];
-    $shop_r     = mysqli_fetch_assoc(mysqli_query($connect,"SELECT * FROM shops WHERE shop_id='$shop_id_ak'"));
+    $shop_r     = safe_fetch_assoc(mysqli_query($connect,"SELECT * FROM shops WHERE shop_id='$shop_id_ak'"));
     $owner_id   = $shop_r['user_id'];
     bot('editMessageText',['chat_id'=>$cid,'message_id'=>$mid,
         'text'=>"📞 <b>Telefon raqamini kiriting:</b>\n\nMasalan: 998901234567",'parse_mode'=>'html']);
@@ -1035,7 +1035,7 @@ if(!empty($step) && mb_stripos($step,"activate_email=")!==false && in_array($cid
     }
     mysqli_query($connect,"UPDATE shops SET phone='$phone_num', email='".mysqli_real_escape_string($connect,$email_inp)."', month_status='Toʻlandi', over_day=30 WHERE shop_id='$shop_id_ak'");
     mysqli_query($connect,"UPDATE users SET step='null' WHERE user_id='$cid_esc'");
-    $shop_r = mysqli_fetch_assoc(mysqli_query($connect,"SELECT * FROM shops WHERE shop_id='$shop_id_ak'"));
+    $shop_r = safe_fetch_assoc(mysqli_query($connect,"SELECT * FROM shops WHERE shop_id='$shop_id_ak'"));
     $nomi   = base64_decode($shop_r['shop_name']);
     bot('sendMessage',['chat_id'=>$cid,
         'text'=>"✅ <b>Kassa to'liq faollashdi!</b>\n\n🏪 Kassa: <b>$nomi</b>\n📞 Raqam: <code>$phone_num</code>\n📧 Email: <code>$email_inp</code>",
@@ -1061,7 +1061,7 @@ if($step=="add_kassa" && !empty($text)){
         bot('sendMessage',['chat_id'=>$cid,'text'=>"👋🏻 <b>Bosh menyu</b>",'parse_mode'=>'html','reply_markup'=>$m]);
         exit;
     }
-    if(mysqli_num_rows(mysqli_query($connect,"SELECT * FROM shops WHERE shop_name='".base64_encode($text)."'"))>0){
+    if(safe_num_rows(mysqli_query($connect,"SELECT * FROM shops WHERE shop_name='".base64_encode($text)."'"))>0){
         bot('sendMessage',['chat_id'=>$cid,'text'=>"⚠️ Bu nom bilan kassa mavjud!",'parse_mode'=>'html']); exit;
     }
     bot('sendmessage',['chat_id'=>$cid,'text'=>"✅ Nom qabul qilindi!\n\nKassa havolasini kiriting:\n<i>Masalan: @username yoki qulayhamyon-uz.up.railway.app</i>",'parse_mode'=>'html','reply_markup'=>$back]);
@@ -1104,7 +1104,7 @@ if(!empty($step) && mb_stripos($step,"add_kassa_info-")!==false && !empty($text)
 }
 if(!empty($data) && mb_stripos($data,"confirm=")!==false){
     $id  = explode("=",$data)[1];
-    $rew = mysqli_fetch_assoc(mysqli_query($connect,"SELECT * FROM shops WHERE shop_id='$id'"));
+    $rew = safe_fetch_assoc(mysqli_query($connect,"SELECT * FROM shops WHERE shop_id='$id'"));
     bot('editMessageText',['chat_id'=>$cid,'message_id'=>$mid,'text'=>"✅ <b>Tasdiqlandi! #$id</b>",'parse_mode'=>'html']);
     bot('sendmessage',['chat_id'=>$rew['user_id'],'text'=>"✅ <b>Kassangiz tasdiqlandi! #$id</b>\n\nEndi sozlamalardan karta va email kiriting.",'parse_mode'=>'html','reply_markup'=>$m]);
     mysqli_query($connect,"UPDATE shops SET status='confirm' WHERE shop_id='$id'");
@@ -1112,7 +1112,7 @@ if(!empty($data) && mb_stripos($data,"confirm=")!==false){
 }
 if(!empty($data) && mb_stripos($data,"canceled=")!==false){
     $id  = explode("=",$data)[1];
-    $rew = mysqli_fetch_assoc(mysqli_query($connect,"SELECT * FROM shops WHERE shop_id='$id'"));
+    $rew = safe_fetch_assoc(mysqli_query($connect,"SELECT * FROM shops WHERE shop_id='$id'"));
     bot('editMessageText',['chat_id'=>$cid,'message_id'=>$mid,'text'=>"⛔ <b>Bekor qilindi! #$id</b>",'parse_mode'=>'html']);
     bot('sendmessage',['chat_id'=>$rew['user_id'],'text'=>"⛔ <b>Kassangiz bekor qilindi! #$id</b>",'parse_mode'=>'html','reply_markup'=>$m]);
     mysqli_query($connect,"UPDATE shops SET status='canceled' WHERE shop_id='$id'");
@@ -1132,7 +1132,7 @@ if(!empty($text) && ($text=="🗄️ Boshqaruv" || $text=="/panel") && in_array(
 // OYLIK NARH
 // ============================================================
 if(!empty($text) && $text=="💰 Oylik narh" && in_array($cid,$admin)){
-    $cur       = mysqli_fetch_assoc(mysqli_query($connect,"SELECT value FROM settings WHERE `key`='month_price'"));
+    $cur       = safe_fetch_assoc(mysqli_query($connect,"SELECT value FROM settings WHERE `key`='month_price'"));
     $cur_price = number_format((int)($cur['value'] ?? 20000),0,'.',' ');
     bot('sendMessage',['chat_id'=>$cid,
         'text'=>"💰 <b>Oylik to'lov narhi</b>\n\nHozirgi narh: <b>$cur_price</b> so'm\n\nYangi narh (so'mda) yuboring:",
@@ -1146,7 +1146,7 @@ if($step=="set_month_price" && in_array($cid,$admin) && !empty($text)){
         bot('sendMessage',['chat_id'=>$cid,'text'=>"❌ Noto'g'ri narh! Minimal 1000 so'm.",'parse_mode'=>'html','reply_markup'=>$panel]);
         exit;
     }
-    $exists = mysqli_num_rows(mysqli_query($connect,"SELECT id FROM settings WHERE `key`='month_price'"));
+    $exists = safe_num_rows(mysqli_query($connect,"SELECT id FROM settings WHERE `key`='month_price'"));
     if($exists>0){
         mysqli_query($connect,"UPDATE settings SET value='$new_price' WHERE `key`='month_price'");
     } else {
@@ -1164,14 +1164,14 @@ if($step=="set_month_price" && in_array($cid,$admin) && !empty($text)){
 // STATISTIKA
 // ============================================================
 if(!empty($text) && $text=="📊 Statistika" && in_array($cid,$admin)){
-    $s_row = mysqli_fetch_assoc(mysqli_query($connect,
+    $s_row = safe_fetch_assoc(mysqli_query($connect,
         "SELECT COUNT(*) as jami, SUM(date='$sana') as bugun FROM users"
     ));
     $stat  = $s_row['jami'];
     $bugun = $s_row['bugun'] ?? 0;
     $textt = "";
     $s5    = mysqli_query($connect,"SELECT user_id,id FROM users ORDER BY id DESC LIMIT 5");
-    while($u=mysqli_fetch_assoc($s5)) $textt .= "👤 <a href='tg://user?id=".$u['user_id']."'>".$u['user_id']."</a>\n";
+    while($u=safe_fetch_assoc($s5)) $textt .= "👤 <a href='tg://user?id=".$u['user_id']."'>".$u['user_id']."</a>\n";
     bot('sendMessage',['chat_id'=>$cid,'text'=>"📊 <b>Statistika</b>\n\n▫️ Jami: <b>$stat</b> ta\n▪️ Bugun: <b>$bugun</b> ta\n\nOxirgi 5ta:\n$textt",'parse_mode'=>"html",'reply_markup'=>$panel]);
     exit;
 }
@@ -1189,8 +1189,8 @@ if($step=="user_check" && in_array($cid,$admin) && !empty($text)){
     if($text=="🗄️ Boshqaruv"){ mysqli_query($connect,"UPDATE users SET step='null' WHERE user_id='$cid_esc'"); exit; }
     mysqli_query($connect,"UPDATE users SET step='null' WHERE user_id='$cid_esc'");
     $text_esc = mysqli_real_escape_string($connect,$text);
-    $ch = mysqli_fetch_assoc(mysqli_query($connect,"SELECT * FROM users WHERE user_id='$text_esc'"));
-    if(!$ch) $ch = mysqli_fetch_assoc(mysqli_query($connect,"SELECT * FROM users WHERE id='$text_esc'"));
+    $ch = safe_fetch_assoc(mysqli_query($connect,"SELECT * FROM users WHERE user_id='$text_esc'"));
+    if(!$ch) $ch = safe_fetch_assoc(mysqli_query($connect,"SELECT * FROM users WHERE id='$text_esc'"));
     if($ch){
         bot('sendMessage',['chat_id'=>$cid,'text'=>"<b>📑 Foydalanuvchi!</b>\n\nID: <code>".$ch['user_id']."</code>\nBalans: <b>".$ch['balance']."</b> soʻm",'parse_mode'=>"HTML",
             'reply_markup'=>json_encode(['inline_keyboard'=>[[['text'=>"➕ Pul qoʻshish",'callback_data'=>"pul=plus=".$ch['user_id']],['text'=>"➖ Pul ayirish",'callback_data'=>"pul=minus=".$ch['user_id']]]]])]);
@@ -1212,7 +1212,7 @@ if(!empty($step) && mb_stripos($step,"pul=")!==false && in_array($cid,$admin) &&
     $id   = explode("=",$step)[2];
     mysqli_query($connect,"UPDATE users SET step='null' WHERE user_id='$cid_esc'");
     $id_esc = mysqli_real_escape_string($connect,$id);
-    $ch     = mysqli_fetch_assoc(mysqli_query($connect,"SELECT * FROM users WHERE user_id='$id_esc'"));
+    $ch     = safe_fetch_assoc(mysqli_query($connect,"SELECT * FROM users WHERE user_id='$id_esc'"));
     $amount = (int)preg_replace('/[^0-9]/','',trim($text));
     $c      = ($type=="plus") ? $ch['balance']+$amount : $ch['balance']-$amount;
     mysqli_query($connect,"UPDATE users SET balance='$c' WHERE user_id='$id_esc'");
@@ -1224,7 +1224,7 @@ if(!empty($step) && mb_stripos($step,"pul=")!==false && in_array($cid,$admin) &&
 // XABAR YUBORISH (broadcast)
 // ============================================================
 if(!empty($text) && $text=="📨 Xabar yuborish" && in_array($cid,$admin)){
-    $send_row = mysqli_fetch_assoc(mysqli_query($connect,"SELECT * FROM `send` LIMIT 1"));
+    $send_row = safe_fetch_assoc(mysqli_query($connect,"SELECT * FROM `send` LIMIT 1"));
     if(!$send_row){
         bot('SendMessage',['chat_id'=>$cid,'text'=>"<b>📨 Xabarni kiriting:</b>\n\nXabarni yuboring:",'parse_mode'=>'html',
             'reply_markup'=>json_encode(['resize_keyboard'=>true,'keyboard'=>[[['text'=>"🗄️ Boshqaruv"]]]])]);
@@ -1247,7 +1247,7 @@ if(!empty($data) && $data=="cancel_broadcast" && in_array($cid,$admin)){
     exit;
 }
 if($step=="send" && in_array($cid,$admin) && isset($message)){
-    $lu  = mysqli_fetch_assoc(mysqli_query($connect,"SELECT * FROM users ORDER BY id DESC LIMIT 1"));
+    $lu  = safe_fetch_assoc(mysqli_query($connect,"SELECT * FROM users ORDER BY id DESC LIMIT 1"));
     $t1  = date('H:i',strtotime('+1 minutes'));
     $t2  = date('H:i',strtotime('+2 minutes'));
     $rm  = base64_encode(json_encode($message->reply_markup ?? null));
@@ -1282,7 +1282,7 @@ if($step=="socialnetwork_step1" && !empty($text)){
     exit;
 }
 if($step=="socialnetwork_step2" && !empty($text)){
-    $nr = mysqli_fetch_assoc(mysqli_query($connect,"SELECT action FROM users WHERE user_id='$cid_esc'"));
+    $nr = safe_fetch_assoc(mysqli_query($connect,"SELECT action FROM users WHERE user_id='$cid_esc'"));
     mysqli_query($connect,"INSERT INTO `channels` (type,link,title,channelID) VALUES('social','".mysqli_real_escape_string($connect,$text)."','".base64_encode($nr['action'])."','')");
     bot('sendMessage',['chat_id'=>$cid,'text'=>"✅ <b>Kanal qo'shildi!</b>",'parse_mode'=>'html','reply_markup'=>$panel]);
     mysqli_query($connect,"UPDATE users SET step='null' WHERE user_id='$cid_esc'");
@@ -1297,7 +1297,7 @@ if(!empty($data) && mb_stripos($data,"request-")!==false){
 }
 if($step=="qosh" && isset($message->forward_origin)){
     $kid = $message->forward_origin->chat->id;
-    $tr  = mysqli_fetch_assoc(mysqli_query($connect,"SELECT action FROM users WHERE user_id='$cid_esc'"));
+    $tr  = safe_fetch_assoc(mysqli_query($connect,"SELECT action FROM users WHERE user_id='$cid_esc'"));
     if($tr['action']=="true"){
         $lnk = bot('createChatInviteLink',['chat_id'=>$kid,'creates_join_request'=>true])->result->invite_link;
         $sq  = "INSERT INTO `channels` (channelID,link,type) VALUES('$kid','$lnk','request')";
@@ -1352,7 +1352,7 @@ if(!empty($text) && $text=="🏪 Kassa boshqaruv" && in_array($cid,$admin)){
 if($step=="admin_kassa_manage" && in_array($cid,$admin) && !empty($text)){
     if($text=="🗄️ Boshqaruv"){ mysqli_query($connect,"UPDATE users SET step='null' WHERE user_id='$cid_esc'"); exit; }
     $sid_esc = mysqli_real_escape_string($connect,trim($text));
-    $shop_r  = mysqli_fetch_assoc(mysqli_query($connect,"SELECT * FROM shops WHERE shop_id='$sid_esc'"));
+    $shop_r  = safe_fetch_assoc(mysqli_query($connect,"SELECT * FROM shops WHERE shop_id='$sid_esc'"));
     if(!$shop_r){
         bot('sendMessage',['chat_id'=>$cid,'text'=>"❌ Bu Shop ID topilmadi!"]);
         exit;
@@ -1402,7 +1402,7 @@ if(!empty($step) && mb_stripos($step,"admin_set_days=")!==false && in_array($cid
         bot('sendMessage',['chat_id'=>$cid,'text'=>"❌ Noto'g'ri son! Qayta kiriting."]);
         exit;
     }
-    $shop_r   = mysqli_fetch_assoc(mysqli_query($connect,"SELECT * FROM shops WHERE shop_id='$sid_esc'"));
+    $shop_r   = safe_fetch_assoc(mysqli_query($connect,"SELECT * FROM shops WHERE shop_id='$sid_esc'"));
     $old_over = (int)($shop_r['over_day'] ?? 0);
     $new_over = $old_over + (int)$days_inp;
     mysqli_query($connect,"UPDATE shops SET over_day='$new_over', month_status='Toʻlandi' WHERE shop_id='$sid_esc'");
@@ -1433,7 +1433,7 @@ if(!empty($text) && $text=="🚫 Kassa ban" && in_array($cid,$admin)){
 if($step=="admin_ban_shop" && in_array($cid,$admin) && !empty($text)){
     if($text=="🗄️ Boshqaruv"){ mysqli_query($connect,"UPDATE users SET step='null' WHERE user_id='$cid_esc'"); exit; }
     $sid_esc   = mysqli_real_escape_string($connect,trim($text));
-    $shop_r    = mysqli_fetch_assoc(mysqli_query($connect,"SELECT * FROM shops WHERE shop_id='$sid_esc'"));
+    $shop_r    = safe_fetch_assoc(mysqli_query($connect,"SELECT * FROM shops WHERE shop_id='$sid_esc'"));
     if(!$shop_r){
         bot('sendMessage',['chat_id'=>$cid,'text'=>"❌ Bu Shop ID topilmadi!"]);
         exit;
@@ -1456,7 +1456,7 @@ if($step=="admin_ban_shop" && in_array($cid,$admin) && !empty($text)){
 }
 if(!empty($data) && mb_stripos($data,"admin_ban=")!==false && in_array($cid,$admin)){
     $sid_esc  = explode("=",$data)[1];
-    $shop_r   = mysqli_fetch_assoc(mysqli_query($connect,"SELECT * FROM shops WHERE shop_id='$sid_esc'"));
+    $shop_r   = safe_fetch_assoc(mysqli_query($connect,"SELECT * FROM shops WHERE shop_id='$sid_esc'"));
     $nomi     = base64_decode($shop_r['shop_name']);
     $owner_id = $shop_r['user_id'];
     mysqli_query($connect,"UPDATE shops SET status='banned' WHERE shop_id='$sid_esc'");
@@ -1473,7 +1473,7 @@ if(!empty($data) && mb_stripos($data,"admin_ban=")!==false && in_array($cid,$adm
 }
 if(!empty($data) && mb_stripos($data,"admin_unban=")!==false && in_array($cid,$admin)){
     $sid_esc  = explode("=",$data)[1];
-    $shop_r   = mysqli_fetch_assoc(mysqli_query($connect,"SELECT * FROM shops WHERE shop_id='$sid_esc'"));
+    $shop_r   = safe_fetch_assoc(mysqli_query($connect,"SELECT * FROM shops WHERE shop_id='$sid_esc'"));
     $nomi     = base64_decode($shop_r['shop_name']);
     $owner_id = $shop_r['user_id'];
     mysqli_query($connect,"UPDATE shops SET status='confirm' WHERE shop_id='$sid_esc'");
@@ -1494,7 +1494,7 @@ if(!empty($data) && mb_stripos($data,"admin_unban=")!==false && in_array($cid,$a
 // ============================================================
 if(!empty($data) && mb_stripos($data,"delete_kassa_ask=")!==false){
     $set_id = explode("=",$data)[1];
-    $shop_r = mysqli_fetch_assoc(mysqli_query($connect,"SELECT * FROM shops WHERE id='$set_id' AND user_id='$cid_esc'"));
+    $shop_r = safe_fetch_assoc(mysqli_query($connect,"SELECT * FROM shops WHERE id='$set_id' AND user_id='$cid_esc'"));
     if(!$shop_r){ bot('answerCallbackQuery',['callback_query_id'=>$qid,'text'=>"❌ Kassa topilmadi!",'show_alert'=>true]); exit; }
     $nomi = base64_decode($shop_r['shop_name']);
     bot('editMessageReplyMarkup',['chat_id'=>$cid,'message_id'=>$mid,
@@ -1506,7 +1506,7 @@ if(!empty($data) && mb_stripos($data,"delete_kassa_ask=")!==false){
 }
 if(!empty($data) && mb_stripos($data,"delete_kassa_yes=")!==false){
     $set_id = explode("=",$data)[1];
-    $shop_r = mysqli_fetch_assoc(mysqli_query($connect,"SELECT * FROM shops WHERE id='$set_id' AND user_id='$cid_esc'"));
+    $shop_r = safe_fetch_assoc(mysqli_query($connect,"SELECT * FROM shops WHERE id='$set_id' AND user_id='$cid_esc'"));
     if(!$shop_r){ bot('answerCallbackQuery',['callback_query_id'=>$qid,'text'=>"❌ Kassa topilmadi!",'show_alert'=>true]); exit; }
     $nomi        = base64_decode($shop_r['shop_name']);
     $shop_id_del = $shop_r['shop_id'];
