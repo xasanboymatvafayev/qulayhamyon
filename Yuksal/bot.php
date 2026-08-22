@@ -3,6 +3,17 @@
 $sub_domen = "qulayhamyonuz.up.railway.app";
 require (__DIR__ . "/../config.php");
 
+// ============================================
+// VAQTINCHALIK DEBUG LOG — muammo topilgach o'chirib tashlang
+// ============================================
+$dbg  = date('Y-m-d H:i:s') . " | ";
+$dbg .= "DB_HOST=" . (getenv('DB_HOST') ? 'bor' : 'YO\'Q') . " ";
+$dbg .= "DB_USER=" . (getenv('DB_USER') ? 'bor' : 'YO\'Q') . " ";
+$dbg .= "DB_NAME=" . (getenv('DB_NAME') ? 'bor' : 'YO\'Q') . " ";
+$dbg .= "TOKEN=" . (getenv('TELEGRAM_BOT_TOKEN') ? 'bor(' . substr(getenv('TELEGRAM_BOT_TOKEN'),0,6) . '...)' : 'YO\'Q') . " ";
+$dbg .= "connect=" . (isset($connect) && $connect ? 'OK' : 'XATO: ' . mysqli_connect_error()) . "\n";
+file_put_contents(__DIR__ . '/debug.log', $dbg, FILE_APPEND);
+
 $administrator = getenv('ADMIN_ID') ?: "6365371142";
 $admin = [$administrator];
 
@@ -32,6 +43,16 @@ function bot($method, $datas=[]){
     curl_setopt($_bot_ch, CURLOPT_URL, "https://api.telegram.org/bot".API_KEY."/".$method);
     curl_setopt($_bot_ch, CURLOPT_POSTFIELDS, $datas);
     $res = curl_exec($_bot_ch);
+    $err = curl_error($_bot_ch);
+    if ($err || !$res) {
+        file_put_contents(__DIR__ . '/debug.log',
+            date('Y-m-d H:i:s') . " | bot($method) CURL XATO: $err | RESPONSE: " . var_export($res, true) . "\n",
+            FILE_APPEND);
+    } elseif (strpos($res, '"ok":false') !== false) {
+        file_put_contents(__DIR__ . '/debug.log',
+            date('Y-m-d H:i:s') . " | bot($method) TELEGRAM XATO: $res\n",
+            FILE_APPEND);
+    }
     return $res ? json_decode($res) : null;
 }
 
