@@ -98,7 +98,7 @@ if ($method === 'create') {
     if ($insert) {
         // Base domain ni dynamic aniqlash
         $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-        $base_domain = $protocol . '://' . ($_SERVER['HTTP_HOST'] ?? 'qulayhamyon.up.railway.app');
+        $base_domain = $protocol . '://' . ($_SERVER['HTTP_HOST'] ?? 'qulayhamyon-uz.up.railway.app');
 
         $response = [
             'status' => 'success',
