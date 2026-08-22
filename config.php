@@ -1,6 +1,11 @@
 <?php
 date_default_timezone_set('Asia/Tashkent');
 
+// PHP 8.1+ da mysqli standart holatda xatoликда fatal exception otadi.
+// Bu loyihadagi barcha kod eski uslubda (@ va false tekshiruvlari bilan)
+// yozilgan, shuning uchun exception rejimini o'chiramiz.
+mysqli_report(MYSQLI_REPORT_OFF);
+
 define('API_KEY', getenv('TELEGRAM_BOT_TOKEN'));
 
 $sana = date("d.m.Y");
