@@ -1,6 +1,6 @@
 <?php
 
-$sub_domen = "qulayhamyonuz.up.railway.app";
+$sub_domen = "qulayhamyon-uz.up.railway.app";
 require (__DIR__ . "/../config.php");
 
 // ============================================
@@ -192,9 +192,9 @@ function joinchat($id){
 function getStats($connect, $shop_id){
     static $_idx_done = false;
     if(!$_idx_done){
+        $_idx_done = true; // faqat process boshida bir marta urinib ko'radi, xato bo'lsa ham davom etadi
         @mysqli_query($connect,"ALTER TABLE checkout ADD INDEX idx_shop_status_paid (shop_id, status)");
         @mysqli_query($connect,"ALTER TABLE payments ADD INDEX idx_shop_id_type (shop_id, card_type)");
-        $_idx_done = true;
     }
     $today    = date('Y-m-d');
     $yesterday= date('Y-m-d', strtotime('-1 day'));
@@ -224,7 +224,7 @@ $update    = json_decode($raw_input);
 $message   = $update->message  ?? null;
 $callback  = $update->callback_query ?? null;
 
-$bot = 'tolovci_uz_bot';
+$bot = 'QulayHamyonuz_bot';
 
 $cid    = null;
 $text   = null;
@@ -567,7 +567,7 @@ if(!empty($data) && mb_stripos($data,"cancel_order=")!==false){
 // API HUJJATLAR
 // ============================================================
 if(!empty($text) && $text=="📖 API Hujjatlar"){
-    bot('sendMessage',['chat_id'=>$cid,'text'=>"<b>📖 API Hujjatlar:</b>\nhttps://qulayhamyonuz.up.railway.app/docs",'disable_web_page_preview'=>true,'parse_mode'=>'html','reply_markup'=>json_encode(['inline_keyboard'=>[[['text'=>"📁 API Docs",'url'=>"https://qulayhamyonuz.up.railway.app/docs"]]]])]);
+    bot('sendMessage',['chat_id'=>$cid,'text'=>"<b>📖 API Hujjatlar:</b>\nhttps://qulayhamyon-uz.up.railway.app/docs",'disable_web_page_preview'=>true,'parse_mode'=>'html','reply_markup'=>json_encode(['inline_keyboard'=>[[['text'=>"📁 API Docs",'url'=>"https://qulayhamyon-uz.up.railway.app/docs"]]]])]);
     exit;
 }
 
@@ -1064,7 +1064,7 @@ if($step=="add_kassa" && !empty($text)){
     if(mysqli_num_rows(mysqli_query($connect,"SELECT * FROM shops WHERE shop_name='".base64_encode($text)."'"))>0){
         bot('sendMessage',['chat_id'=>$cid,'text'=>"⚠️ Bu nom bilan kassa mavjud!",'parse_mode'=>'html']); exit;
     }
-    bot('sendmessage',['chat_id'=>$cid,'text'=>"✅ Nom qabul qilindi!\n\nKassa havolasini kiriting:\n<i>Masalan: @username yoki qulayhamyonuz.up.railway.app</i>",'parse_mode'=>'html','reply_markup'=>$back]);
+    bot('sendmessage',['chat_id'=>$cid,'text'=>"✅ Nom qabul qilindi!\n\nKassa havolasini kiriting:\n<i>Masalan: @username yoki qulayhamyon-uz.up.railway.app</i>",'parse_mode'=>'html','reply_markup'=>$back]);
     mysqli_query($connect,"UPDATE users SET step='add_kassa_address-".base64_encode($text)."' WHERE user_id='$cid_esc'");
     exit;
 }
